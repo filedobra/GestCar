@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Veicoli</title>
+    <style>
+        /* Reset e base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Page management */
+        .page {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Homepage styles */
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .main-button {
+            background: white;
+            border: none;
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            text-align: left;
+        }
+
+        .main-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .button-icon {
+            font-size: 2rem;
+            min-width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .button-text h3 {
+            color: #333;
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+
+        .button-text p {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /* Back button */
+        .back-button {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Form styles */
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-card h2 {
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .form-subtitle {
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .submit-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Lists */
+        .vehicles-list,
+        .interventions-list {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .vehicles-list h3,
+        .interventions-list h3 {
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+        .vehicle-item,
+        .intervention-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .vehicle-item h4,
+        .intervention-item h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .vehicle-item p,
+        .intervention-item p {
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .item-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .edit-button,
+        .delete-button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .edit-button {
+            background: #28a745;
+            color: white;
+        }
+
+        .edit-button:hover {
+            background: #218838;
+        }
+
+        .delete-button {
+            background: #dc3545;
+            color: white;
+        }
+
+        .delete-button:hover {
+            background: #c82333;
+        }
+
+        /* Search and results */
+        .search-form {
+            display: flex;
+            gap: 16px;
+            align-items: end;
+            margin-bottom: 24px;
+        }
+
+        .search-form .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .search-form .submit-button {
+            width: auto;
+            min-width: 120px;
+        }
+
+        .search-results,
+        .scadenze-results {
+            margin-top: 24px;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-item h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .result-item .details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .result-item .details span {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .scadenza-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid #28a745;
+        }
+
+        .scadenza-item.scaduta {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .scadenza-item.prossima {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-button {
+                padding: 20px;
+            }
+            
+            .form-card {
+                padding: 24px;
+            }
+            
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .search-form .submit-button {
+                width: 100%;
+            }
+            
+            .result-item .details {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Utility classes */
+        .text-center {
+            text-align: center;
+        }
+
+        .text-success {
+            color: #28a745;
+        }
+
+        .text-danger {
+            color: #dc3545;
+        }
+
+        .text-warning {
+            color: #ffc107;
+        }
+
+        .mb-2 {
+            margin-bottom: 8px;
+        }
+
+        .mb-3 {
+            margin-bottom: 16px;
+        }
+
+        .mb-4 {
+            margin-bottom: 24px;
+        }
+
+        /* Loading and error states */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error {
+            background: #fff5f5;
+            color: #dc3545;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+            margin-bottom: 16px;
+        }
+
+        .success {
+            background: #f0fff4;
+            color: #28a745;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Homepage -->
+        <div id="homepage" class="page active">
+            <div class="container">
+                <h1>Gestione Veicoli</h1>
+                <p class="subtitle">Sistema completo per la gestione di veicoli, interventi e scadenze</p>
+                
+                <div class="button-grid">
+                    <button class="main-button" onclick="showPage('vehicle-form')">
+                        <div class="button-icon">🚗</div>
+                        <div class="button-text">
+                            <h3>Inserimento Veicolo</h3>
+                            <p>Aggiungi un nuovo veicolo con dati e scadenze</p>
+                        </div>
+                    </button>
+                    
+                    <button class="main-button" onclick="showPage('intervention-form')">
+                        <div class="button-icon">🔧</div>
+                        <div class="button-text">
+                            <h3>Inserimento Intervento</h3>
+                            <p>Registra un nuovo intervento di manutenzione</p>
+                        </div>
+                    </button>
+                    
+                    <button class="main-button" onclick="showPage('search-interventions')">
+                        <div class="button-icon">🔍</div>
+                        <div class="button-text">
+                            <h3>Cerca Interventi</h3>
+                            <p>Visualizza tutti gli interventi per targa</p>
+                        </div>
+                    </button>
+                    
+                    <button class="main-button" onclick="showPage('view-scadenze')">
+                        <div class="button-icon">📅</div>
+                        <div class="button-text">
+                            <h3>Scadenze</h3>
+                            <p>Controlla le scadenze del veicolo</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inserimento Veicolo -->
+        <div id="vehicle-form" class="page">
+            <div class="container">
+                <button class="back-button" onclick="showPage('homepage')">← Torna alla Home</button>
+                
+                <div class="form-card">
+                    <h2>Inserimento Veicolo</h2>
+                    <p class="form-subtitle">Dati Veicolo</p>
+                    
+                    <form id="vehicleForm">
+                        <div class="form-group">
+                            <label for="targa">Targa *</label>
+                            <input type="text" id="targa" name="targa" placeholder="ES: AB123CD" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="marca">Marca *</label>
+                            <input type="text" id="marca" name="marca" placeholder="ES: Fiat" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="modello">Modello *</label>
+                            <input type="text" id="modello" name="modello" placeholder="ES: Punto" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="anno">Anno Immatricolazione *</label>
+                            <input type="number" id="anno" name="anno" placeholder="ES: 2020" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="scadenza_revisione">Scadenza Revisione</label>
+                            <input type="date" id="scadenza_revisione" name="scadenza_revisione">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="scadenza_bollo">Scadenza Bollo</label>
+                            <input type="date" id="scadenza_bollo" name="scadenza_bollo">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="scadenza_assicurazione">Scadenza Assicurazione</label>
+                            <input type="date" id="scadenza_assicurazione" name="scadenza_assicurazione">
+                        </div>
+                        
+                        <button type="submit" class="submit-button">Salva</button>
+                    </form>
+                    
+                    <div class="vehicles-list">
+                        <h3>Veicoli Registrati</h3>
+                        <div id="vehiclesList">
+                            <p>Nessun veicolo registrato</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inserimento Intervento -->
+        <div id="intervention-form" class="page">
+            <div class="container">
+                <button class="back-button" onclick="showPage('homepage')">← Torna alla Home</button>
+                
+                <div class="form-card">
+                    <h2>Inserimento Intervento</h2>
+                    <p class="form-subtitle">Dati Intervento</p>
+                    
+                    <form id="interventionForm">
+                        <div class="form-group">
+                            <label for="targa_veicolo">Targa Veicolo *</label>
+                            <select id="targa_veicolo" name="targa_veicolo" required>
+                                <option value="">Seleziona una targa</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="data_intervento">Data Intervento *</label>
+                            <input type="date" id="data_intervento" name="data_intervento" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tipo_intervento">Tipo Intervento *</label>
+                            <select id="tipo_intervento" name="tipo_intervento" required>
+                                <option value="">Seleziona tipo intervento</option>
+                                <option value="Tagliando">Tagliando</option>
+                                <option value="Cambio olio">Cambio olio</option>
+                                <option value="Revisione">Revisione</option>
+                                <option value="Riparazione">Riparazione</option>
+                                <option value="Sostituzione pneumatici">Sostituzione pneumatici</option>
+                                <option value="Controllo freni">Controllo freni</option>
+                                <option value="Altro">Altro</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="costo">Costo (€) *</label>
+                            <input type="number" id="costo" name="costo" step="0.01" placeholder="ES: 150.00" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="kilometraggio">Kilometraggio *</label>
+                            <input type="number" id="kilometraggio" name="kilometraggio" placeholder="ES: 50000" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="note">Note</label>
+                            <textarea id="note" name="note" placeholder="Note aggiuntive sull'intervento..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="submit-button">Salva</button>
+                    </form>
+                    
+                    <div class="interventions-list">
+                        <h3>Interventi Registrati</h3>
+                        <div id="interventionsList">
+                            <p>Nessun intervento registrato</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cerca Interventi -->
+        <div id="search-interventions" class="page">
+            <div class="container">
+                <button class="back-button" onclick="showPage('homepage')">← Torna alla Home</button>
+                
+                <div class="form-card">
+                    <h2>Cerca Interventi</h2>
+                    <p class="form-subtitle">Ricerca per targa</p>
+                    
+                    <div class="search-form">
+                        <div class="form-group">
+                            <label for="search_targa">Targa Veicolo</label>
+                            <select id="search_targa">
+                                <option value="">Seleziona una targa</option>
+                            </select>
+                        </div>
+                        <button onclick="searchInterventions()" class="submit-button">Cerca</button>
+                    </div>
+                    
+                    <div id="searchResults" class="search-results">
+                        <!-- I risultati della ricerca verranno inseriti qui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualizza Scadenze -->
+        <div id="view-scadenze" class="page">
+            <div class="container">
+                <button class="back-button" onclick="showPage('homepage')">← Torna alla Home</button>
+                
+                <div class="form-card">
+                    <h2>Scadenze Veicolo</h2>
+                    <p class="form-subtitle">Seleziona un veicolo</p>
+                    
+                    <div class="search-form">
+                        <div class="form-group">
+                            <label for="scadenze_veicolo">Veicolo</label>
+                            <select id="scadenze_veicolo">
+                                <option value="">Seleziona un veicolo</option>
+                            </select>
+                        </div>
+                        <button onclick="viewScadenze()" class="submit-button">Visualizza Scadenze</button>
+                    </div>
+                    
+                    <div id="scadenzeResults" class="scadenze-results">
+                        <!-- Le scadenze verranno inserite qui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dati locali per simulare il database
+        let vehicles = [];
+        let interventions = [];
+
+        // Funzioni di utilità
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Non specificata';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('it-IT');
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('it-IT', {
+                style: 'currency',
+                currency: 'EUR'
+            }).format(amount);
+        }
+
+        // Gestione delle pagine
+        function showPage(pageId) {
+            // Nasconde tutte le pagine
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.remove('active'));
+            
+            // Mostra la pagina richiesta
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                
+                // Aggiorna i dati quando si carica una pagina
+                if (pageId === 'vehicle-form') {
+                    loadVehiclesList();
+                    updateVehicleSelects();
+                } else if (pageId === 'intervention-form') {
+                    updateVehicleSelects();
+                    loadInterventionsList();
+                } else if (pageId === 'search-interventions') {
+                    updateVehicleSelects();
+                    clearSearchResults();
+                } else if (pageId === 'view-scadenze') {
+                    updateVehicleSelects();
+                    clearScadenzeResults();
+                }
+            }
+        }
+
+        // Gestione form veicoli
+        document.getElementById('vehicleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const vehicle = {
+                id: generateId(),
+                targa: formData.get('targa').toUpperCase(),
+                marca: formData.get('marca'),
+                modello: formData.get('modello'),
+                anno: parseInt(formData.get('anno')),
+                scadenza_revisione: formData.get('scadenza_revisione'),
+                scadenza_bollo: formData.get('scadenza_bollo'),
+                scadenza_assicurazione: formData.get('scadenza_assicurazione'),
+                created_at: new Date().toISOString()
+            };
+            
+            // Verifica se la targa esiste già
+            if (vehicles.find(v => v.targa === vehicle.targa)) {
+                showMessage('Errore: Targa già esistente', 'error');
+                return;
+            }
+            
+            vehicles.push(vehicle);
+            saveToLocalStorage();
+            
+            showMessage('Veicolo salvato con successo!', 'success');
+            e.target.reset();
+            loadVehiclesList();
+            updateVehicleSelects();
+        });
+
+        // Gestione form interventi
+        document.getElementById('interventionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const intervention = {
+                id: generateId(),
+                targa_veicolo: formData.get('targa_veicolo'),
+                data_intervento: formData.get('data_intervento'),
+                tipo_intervento: formData.get('tipo_intervento'),
+                costo: parseFloat(formData.get('costo')),
+                kilometraggio: parseInt(formData.get('kilometraggio')),
+                note: formData.get('note'),
+                created_at: new Date().toISOString()
+            };
+            
+            interventions.push(intervention);
+            saveToLocalStorage();
+            
+            showMessage('Intervento salvato con successo!', 'success');
+            e.target.reset();
+            loadInterventionsList();
+        });
+
+        // Caricamento lista veicoli
+        function loadVehiclesList() {
+            const container = document.getElementById('vehiclesList');
+            
+            if (vehicles.length === 0) {
+                container.innerHTML = '<p>Nessun veicolo registrato</p>';
+                return;
+            }
+            
+            const html = vehicles.map(vehicle => `
+                <div class="vehicle-item">
+                    <h4>${vehicle.targa} - ${vehicle.marca} ${vehicle.modello}</h4>
+                    <p><strong>Anno:</strong> ${vehicle.anno}</p>
+                    <p><strong>Revisione:</strong> ${formatDate(vehicle.scadenza_revisione)}</p>
+                    <p><strong>Bollo:</strong> ${formatDate(vehicle.scadenza_bollo)}</p>
+                    <p><strong>Assicurazione:</strong> ${formatDate(vehicle.scadenza_assicurazione)}</p>
+                    <div class="item-actions">
+                        <button class="edit-button" onclick="editVehicle('${vehicle.id}')">Modifica</button>
+                        <button class="delete-button" onclick="deleteVehicle('${vehicle.id}')">Elimina</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+        }
+
+        // Caricamento lista interventi
+        function loadInterventionsList() {
+            const container = document.getElementById('interventionsList');
+            
+            if (interventions.length === 0) {
+                container.innerHTML = '<p>Nessun intervento registrato</p>';
+                return;
+            }
+            
+            const html = interventions.map(intervention => {
+                const vehicle = vehicles.find(v => v.targa === intervention.targa_veicolo);
+                const vehicleInfo = vehicle ? `${vehicle.marca} ${vehicle.modello}` : 'Veicolo non trovato';
+                
+                return `
+                    <div class="intervention-item">
+                        <h4>${intervention.targa_veicolo} - ${vehicleInfo}</h4>
+                        <div class="details">
+                            <span><strong>Data:</strong> ${formatDate(intervention.data_intervento)}</span>
+                            <span><strong>Tipo:</strong> ${intervention.tipo_intervento}</span>
+                            <span><strong>Costo:</strong> ${formatCurrency(intervention.costo)}</span>
+                            <span><strong>Km:</strong> ${intervention.kilometraggio.toLocaleString('it-IT')}</span>
+                        </div>
+                        ${intervention.note ? `<p><strong>Note:</strong> ${intervention.note}</p>` : ''}
+                        <div class="item-actions">
+                            <button class="edit-button" onclick="editIntervention('${intervention.id}')">Modifica</button>
+                            <button class="delete-button" onclick="deleteIntervention('${intervention.id}')">Elimina</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        // Aggiornamento select veicoli
+        function updateVehicleSelects() {
+            const selects = [
+                document.getElementById('targa_veicolo'),
+                document.getElementById('scadenze_veicolo'),
+                document.getElementById('search_targa')
+            ];
+            
+            selects.forEach(select => {
+                if (!select) return;
+                
+                // Mantieni la prima opzione
+                const firstOption = select.querySelector('option[value=""]');
+                select.innerHTML = '';
+                if (firstOption) {
+                    select.appendChild(firstOption);
+                }
+                
+                vehicles.forEach(vehicle => {
+                    const option = document.createElement('option');
+                    option.value = vehicle.targa;
+                    option.textContent = `${vehicle.targa} - ${vehicle.marca} ${vehicle.modello}`;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        // Ricerca interventi
+        function searchInterventions() {
+            const targa = document.getElementById('search_targa').value;
+            const container = document.getElementById('searchResults');
+            
+            if (!targa) {
+                container.innerHTML = '<p class="error">Seleziona una targa per la ricerca</p>';
+                return;
+            }
+            
+            const vehicleInterventions = interventions.filter(i => i.targa_veicolo === targa);
+            const vehicle = vehicles.find(v => v.targa === targa);
+            
+            if (!vehicle) {
+                container.innerHTML = '<p class="error">Veicolo non trovato</p>';
+                return;
+            }
+            
+            if (vehicleInterventions.length === 0) {
+                container.innerHTML = `
+                    <div class="result-item">
+                        <h4>${vehicle.targa} - ${vehicle.marca} ${vehicle.modello}</h4>
+                        <p>Nessun intervento registrato per questo veicolo</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordina per data (più recenti prima)
+            vehicleInterventions.sort((a, b) => new Date(b.data_intervento) - new Date(a.data_intervento));
+            
+            const totalCost = vehicleInterventions.reduce((sum, i) => sum + i.costo, 0);
+            
+            const html = `
+                <div class="result-item">
+                    <h4>${vehicle.targa} - ${vehicle.marca} ${vehicle.modello} (${vehicle.anno})</h4>
+                    <p><strong>Totale interventi:</strong> ${vehicleInterventions.length}</p>
+                    <p><strong>Costo totale:</strong> ${formatCurrency(totalCost)}</p>
+                </div>
+                ${vehicleInterventions.map(intervention => `
+                    <div class="result-item">
+                        <h4>${intervention.tipo_intervento}</h4>
+                        <div class="details">
+                            <span><strong>Data:</strong> ${formatDate(intervention.data_intervento)}</span>
+                            <span><strong>Costo:</strong> ${formatCurrency(intervention.costo)}</span>
+                            <span><strong>Km:</strong> ${intervention.kilometraggio.toLocaleString('it-IT')}</span>
+                        </div>
+                        ${intervention.note ? `<p><strong>Note:</strong> ${intervention.note}</p>` : ''}
+                        <div class="item-actions">
+                            <button class="edit-button" onclick="editIntervention('${intervention.id}')">Modifica</button>
+                            <button class="delete-button" onclick="deleteIntervention('${intervention.id}')">Elimina</button>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // Visualizzazione scadenze
+        function viewScadenze() {
+            const targa = document.getElementById('scadenze_veicolo').value;
+            const container = document.getElementById('scadenzeResults');
+            
+            if (!targa) {
+                container.innerHTML = '<p class="error">Seleziona un veicolo</p>';
+                return;
+            }
+            
+            const vehicle = vehicles.find(v => v.targa === targa);
+            if (!vehicle) {
+                container.innerHTML = '<p class="error">Veicolo non trovato</p>';
+                return;
+            }
+            
+            const today = new Date();
+            const oneMonthFromNow = new Date();
+            oneMonthFromNow.setMonth(today.getMonth() + 1);
+            
+            const scadenze = [
+                {
+                    tipo: 'Revisione',
+                    data: vehicle.scadenza_revisione,
+                    scaduta: vehicle.scadenza_revisione && new Date(vehicle.scadenza_revisione) < today,
+                    prossima: vehicle.scadenza_revisione && new Date(vehicle.scadenza_revisione) <= oneMonthFromNow && new Date(vehicle.scadenza_revisione) >= today
+                },
+                {
+                    tipo: 'Bollo',
+                    data: vehicle.scadenza_bollo,
+                    scaduta: vehicle.scadenza_bollo && new Date(vehicle.scadenza_bollo) < today,
+                    prossima: vehicle.scadenza_bollo && new Date(vehicle.scadenza_bollo) <= oneMonthFromNow && new Date(vehicle.scadenza_bollo) >= today
+                },
+                {
+                    tipo: 'Assicurazione',
+                    data: vehicle.scadenza_assicurazione,
+                    scaduta: vehicle.scadenza_assicurazione && new Date(vehicle.scadenza_assicurazione) < today,
+                    prossima: vehicle.scadenza_assicurazione && new Date(vehicle.scadenza_assicurazione) <= oneMonthFromNow && new Date(vehicle.scadenza_assicurazione) >= today
+                }
+            ];
+            
+            const html = `
+                <div class="result-item">
+                    <h4>${vehicle.targa} - ${vehicle.marca} ${vehicle.modello} (${vehicle.anno})</h4>
+                </div>
+                ${scadenze.map(scadenza => {
+                    let cssClass = 'scadenza-item';
+                    let status = 'Valida';
+                    
+                    if (scadenza.scaduta) {
+                        cssClass += ' scaduta';
+                        status = 'SCADUTA';
+                    } else if (scadenza.prossima) {
+                        cssClass += ' prossima';
+                        status = 'In scadenza';
+                    }
+                    
+                    return `
+                        <div class="${cssClass}">
+                            <h4>${scadenza.tipo}</h4>
+                            <p><strong>Data scadenza:</strong> ${formatDate(scadenza.data)}</p>
+                            <p><strong>Stato:</strong> <span class="${scadenza.scaduta ? 'text-danger' : scadenza.prossima ? 'text-warning' : 'text-success'}">${status}</span></p>
+                        </div>
+                    `;
+                }).join('')}
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // Funzioni di modifica e cancellazione
+        function editVehicle(id) {
+            const vehicle = vehicles.find(v => v.id === id);
+            if (!vehicle) return;
+            
+            // Popola il form con i dati del veicolo
+            document.getElementById('targa').value = vehicle.targa;
+            document.getElementById('marca').value = vehicle.marca;
+            document.getElementById('modello').value = vehicle.modello;
+            document.getElementById('anno').value = vehicle.anno;
+            document.getElementById('scadenza_revisione').value = vehicle.scadenza_revisione || '';
+            document.getElementById('scadenza_bollo').value = vehicle.scadenza_bollo || '';
+            document.getElementById('scadenza_assicurazione').value = vehicle.scadenza_assicurazione || '';
+            
+            // Rimuovi il veicolo dalla lista (sarà ri-aggiunto quando il form viene salvato)
+            deleteVehicle(id, false);
+            
+            // Mostra la pagina del form veicolo
+            showPage('vehicle-form');
+            
+            showMessage('Veicolo caricato per la modifica', 'success');
+        }
+
+        function deleteVehicle(id, showConfirm = true) {
+            if (showConfirm && !confirm('Sei sicuro di voler eliminare questo veicolo?')) {
+                return;
+            }
+            
+            vehicles = vehicles.filter(v => v.id !== id);
+            saveToLocalStorage();
+            loadVehiclesList();
+            updateVehicleSelects();
+            
+            if (showConfirm) {
+                showMessage('Veicolo eliminato', 'success');
+            }
+        }
+
+        function editIntervention(id) {
+            const intervention = interventions.find(i => i.id === id);
+            if (!intervention) return;
+            
+            // Popola il form con i dati dell'intervento
+            document.getElementById('targa_veicolo').value = intervention.targa_veicolo;
+            document.getElementById('data_intervento').value = intervention.data_intervento;
+            document.getElementById('tipo_intervento').value = intervention.tipo_intervento;
+            document.getElementById('costo').value = intervention.costo;
+            document.getElementById('kilometraggio').value = intervention.kilometraggio;
+            document.getElementById('note').value = intervention.note || '';
+            
+            // Rimuovi l'intervento dalla lista
+            deleteIntervention(id, false);
+            
+            // Mostra la pagina del form intervento
+            showPage('intervention-form');
+            
+            showMessage('Intervento caricato per la modifica', 'success');
+        }
+
+        function deleteIntervention(id, showConfirm = true) {
+            if (showConfirm && !confirm('Sei sicuro di voler eliminare questo intervento?')) {
+                return;
+            }
+            
+            interventions = interventions.filter(i => i.id !== id);
+            saveToLocalStorage();
+            loadInterventionsList();
+            
+            if (showConfirm) {
+                showMessage('Intervento eliminato', 'success');
+            }
+        }
+
+        // Funzioni di utilità per i messaggi
+        function showMessage(message, type = 'success') {
+            // Rimuovi messaggi esistenti
+            const existingMessages = document.querySelectorAll('.success, .error');
+            existingMessages.forEach(msg => msg.remove());
+            
+            // Crea nuovo messaggio
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            
+            // Inserisci il messaggio nella pagina attiva
+            const activePage = document.querySelector('.page.active .form-card');
+            if (activePage) {
+                activePage.insertBefore(messageDiv, activePage.firstChild);
+                
+                // Rimuovi il messaggio dopo 3 secondi
+                setTimeout(() => {
+                    messageDiv.remove();
+                }, 3000);
+            }
+        }
+
+        function clearSearchResults() {
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('search_targa').value = '';
+        }
+
+        function clearScadenzeResults() {
+            document.getElementById('scadenzeResults').innerHTML = '';
+            document.getElementById('scadenze_veicolo').value = '';
+        }
+
+        // Gestione localStorage
+        function saveToLocalStorage() {
+            localStorage.setItem('vehicles', JSON.stringify(vehicles));
+            localStorage.setItem('interventions', JSON.stringify(interventions));
+        }
+
+        function loadFromLocalStorage() {
+            const savedVehicles = localStorage.getItem('vehicles');
+            const savedInterventions = localStorage.getItem('interventions');
+            
+            if (savedVehicles) {
+                vehicles = JSON.parse(savedVehicles);
+            }
+            
+            if (savedInterventions) {
+                interventions = JSON.parse(savedInterventions);
+            }
+        }
+
+        // Inizializzazione dell'applicazione
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFromLocalStorage();
+            updateVehicleSelects();
+            
+            // Mostra la homepage di default
+            showPage('homepage');
+            
+            // Imposta la data di oggi come default per i form
+            const today = new Date().toISOString().split('T')[0];
+            const dateInputs = document.querySelectorAll('input[type="date"]');
+            dateInputs.forEach(input => {
+                if (input.id === 'data_intervento') {
+                    input.value = today;
+                }
+            });
+        });
+
+        // Gestione del tasto Esc per tornare alla homepage
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                showPage('homepage');
+            }
+        });
+
+        // Funzioni per l'esportazione (placeholder per future implementazioni)
+        function exportToPDF(type, data) {
+            // Questa funzione può essere implementata con librerie come jsPDF
+            alert('Funzionalità di esportazione PDF in sviluppo');
+        }
+
+        // Funzione per il backup dei dati
+        function exportData() {
+            const data = {
+                vehicles: vehicles,
+                interventions: interventions,
+                exportDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = 'gestione_veicoli_backup.json';
+            link.click();
+        }
+
+        // Funzione per l'importazione dei dati
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (data.vehicles && data.interventions) {
+                        vehicles = data.vehicles;
+                        interventions = data.interventions;
+                        saveToLocalStorage();
+                        
+                        // Aggiorna tutte le visualizzazioni
+                        loadVehiclesList();
+                        loadInterventionsList();
+                        updateVehicleSelects();
+                        
+                        showMessage('Dati importati con successo!', 'success');
+                    } else {
+                        showMessage('File non valido', 'error');
+                    }
+                } catch (error) {
+                    showMessage('Errore durante l\'importazione: ' + error.message, 'error');
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>

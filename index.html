@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Veicoli</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
     <style>
         /* Reset e base styles */
         * {
@@ -412,221 +417,557 @@
             border-left: 4px solid #28a745;
             margin-bottom: 16px;
         }
+
+        /* Nuovo layout con sidebar a sinistra */
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background: #f5f7fa;
+            overflow-y: auto;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e1e5e9;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid #e1e5e9;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .menu-button {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 15px 20px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-right: 4px solid transparent;
+        }
+
+        .menu-button:hover {
+            background: #f8f9fa;
+        }
+
+        .menu-button.active {
+            background: #f0f4ff;
+            border-right-color: #667eea;
+        }
+
+        .menu-icon {
+            font-size: 1.5rem;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-text h3 {
+            margin: 0 0 4px 0;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .menu-text p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .export-button, .import-button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .export-button {
+            background: #28a745;
+            color: white;
+        }
+
+        .export-button:hover {
+            background: #218838;
+        }
+
+        .import-button {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .import-button:hover {
+            background: #138496;
+        }
+
+        /* Stili per la Dashboard */
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-info h3 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: #333;
+        }
+
+        .stat-info p {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .dashboard-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+
+        .dashboard-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .dashboard-section h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            border-bottom: 2px solid #f0f4ff;
+            padding-bottom: 10px;
+        }
+
+        .recent-list, .scadenze-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .recent-item, .scadenza-item {
+            padding: 12px;
+            border-bottom: 1px solid #f0f4ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recent-item:last-child, .scadenza-item:last-child {
+            border-bottom: none;
+        }
+
+        .recent-info, .scadenza-info {
+            flex: 1;
+        }
+
+        .recent-info h4, .scadenza-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .recent-info p, .scadenza-info p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .scadenza-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .scadenza-status.scaduta {
+            background: #ffe6e6;
+            color: #dc3545;
+        }
+
+        .scadenza-status.prossima {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        /* Responsive design per il nuovo layout */
+        @media (max-width: 768px) {
+            .app-layout {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: 1;
+            }
+            
+            .main-content {
+                order: 2;
+            }
+            
+            .dashboard-sections {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- Homepage -->
-        <div id="homepage" class="page active">
-            <div class="container">
-                <h1>Gestione Veicoli</h1>
-                <p class="subtitle">Sistema completo per la gestione di veicoli, interventi e scadenze</p>
+        <!-- Layout con sidebar a sinistra -->
+        <div class="app-layout">
+            <!-- Sidebar a sinistra con menu -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2>Menu</h2>
+                </div>
                 
-                <div class="button-grid">
-                    <button class="main-button" onclick="showPage('vehicle-form')">
-                        <div class="button-icon">🚗</div>
-                        <div class="button-text">
+                <div class="sidebar-menu">
+                    <button class="menu-button active" onclick="showPage('dashboard')">
+                        <div class="menu-icon">📊</div>
+                        <div class="menu-text">
+                            <h3>Dashboard</h3>
+                            <p>Panoramica generale</p>
+                        </div>
+                    </button>
+                    
+                    <button class="menu-button" onclick="showPage('vehicle-form')">
+                        <div class="menu-icon">🚗</div>
+                        <div class="menu-text">
                             <h3>Inserimento Veicolo</h3>
-                            <p>Aggiungi un nuovo veicolo con dati e scadenze</p>
+                            <p>Aggiungi nuovo veicolo</p>
                         </div>
                     </button>
                     
-                    <button class="main-button" onclick="showPage('intervention-form')">
-                        <div class="button-icon">🔧</div>
-                        <div class="button-text">
+                    <button class="menu-button" onclick="showPage('intervention-form')">
+                        <div class="menu-icon">🔧</div>
+                        <div class="menu-text">
                             <h3>Inserimento Intervento</h3>
-                            <p>Registra un nuovo intervento di manutenzione</p>
+                            <p>Registra manutenzione</p>
                         </div>
                     </button>
                     
-                    <button class="main-button" onclick="showPage('search-interventions')">
-                        <div class="button-icon">🔍</div>
-                        <div class="button-text">
+                    <button class="menu-button" onclick="showPage('search-interventions')">
+                        <div class="menu-icon">🔍</div>
+                        <div class="menu-text">
                             <h3>Cerca Interventi</h3>
-                            <p>Visualizza tutti gli interventi per targa</p>
+                            <p>Visualizza per targa</p>
                         </div>
                     </button>
                     
-                    <button class="main-button" onclick="showPage('view-scadenze')">
-                        <div class="button-icon">📅</div>
-                        <div class="button-text">
+                    <button class="menu-button" onclick="showPage('view-scadenze')">
+                        <div class="menu-icon">📅</div>
+                        <div class="menu-text">
                             <h3>Scadenze</h3>
-                            <p>Controlla le scadenze del veicolo</p>
+                            <p>Controlla scadenze</p>
                         </div>
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Inserimento Veicolo -->
-        <div id="vehicle-form" class="page">
-            <div class="container">
-                <button class="back-button" onclick="showPage('homepage')">← Torna alla Home</button>
                 
-                <div class="form-card">
-                    <h2>Inserimento Veicolo</h2>
-                    <p class="form-subtitle">Dati Veicolo</p>
-                    
-                    <form id="vehicleForm">
-                        <div class="form-group">
-                            <label for="targa">Targa *</label>
-                            <input type="text" id="targa" name="targa" placeholder="ES: AB123CD" required>
+                <div class="sidebar-footer">
+                    <button class="export-button" onclick="exportData()">Esporta Dati</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                    <button class="import-button" onclick="document.getElementById('importFile').click()">Importa Dati</button>
+                </div>
+            </div>
+            
+            <!-- Area principale con dashboard -->
+            <div class="main-content">
+                <!-- Dashboard -->
+                <div id="dashboard" class="page active">
+                    <div class="container">
+                        <h1>Dashboard Veicoli</h1>
+                        <p class="subtitle">Panoramica completa del tuo parco veicoli</p>
+                        
+                        <!-- Statistiche riepilogative -->
+                        <div class="dashboard-stats">
+                            <div class="stat-card">
+                                <div class="stat-icon">🚗</div>
+                                <div class="stat-info">
+                                    <h3 id="totalVehicles">0</h3>
+                                    <p>Veicoli Registrati</p>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">🔧</div>
+                                <div class="stat-info">
+                                    <h3 id="totalInterventions">0</h3>
+                                    <p>Interventi Totali</p>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">📅</div>
+                                <div class="stat-info">
+                                    <h3 id="upcomingScadenze">0</h3>
+                                    <p>Scadenze Prossime</p>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">💰</div>
+                                <div class="stat-info">
+                                    <h3 id="totalCost">€0</h3>
+                                    <p>Costo Totale</p>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="marca">Marca *</label>
-                            <input type="text" id="marca" name="marca" placeholder="ES: Fiat" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="modello">Modello *</label>
-                            <input type="text" id="modello" name="modello" placeholder="ES: Punto" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="anno">Anno Immatricolazione *</label>
-                            <input type="number" id="anno" name="anno" placeholder="ES: 2020" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="scadenza_revisione">Scadenza Revisione</label>
-                            <input type="date" id="scadenza_revisione" name="scadenza_revisione">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="scadenza_bollo">Scadenza Bollo</label>
-                            <input type="date" id="scadenza_bollo" name="scadenza_bollo">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="scadenza_assicurazione">Scadenza Assicurazione</label>
-                            <input type="date" id="scadenza_assicurazione" name="scadenza_assicurazione">
-                        </div>
-                        
-                        <button type="submit" class="submit-button">Salva</button>
-                    </form>
-                    
-                    <div class="vehicles-list">
-                        <h3>Veicoli Registrati</h3>
-                        <div id="vehiclesList">
-                            <p>Nessun veicolo registrato</p>
+                        <!-- Sezioni aggiuntive della dashboard -->
+                        <div class="dashboard-sections">
+                            <div class="dashboard-section">
+                                <h3>Ultimi Interventi</h3>
+                                <div id="recentInterventions" class="recent-list">
+                                    <p>Nessun intervento recente</p>
+                                </div>
+                            </div>
+                            
+                            <div class="dashboard-section">
+                                <h3>Scadenze Imminenti</h3>
+                                <div id="upcomingDeadlines" class="scadenze-list">
+                                    <p>Nessuna scadenza imminente</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Inserimento Intervento -->
-        <div id="intervention-form" class="page">
-            <div class="container">
-                <button class="back-button" onclick="showPage('homepage')">← Torna alla Home</button>
-                
-                <div class="form-card">
-                    <h2>Inserimento Intervento</h2>
-                    <p class="form-subtitle">Dati Intervento</p>
-                    
-                    <form id="interventionForm">
-                        <div class="form-group">
-                            <label for="targa_veicolo">Targa Veicolo *</label>
-                            <select id="targa_veicolo" name="targa_veicolo" required>
-                                <option value="">Seleziona una targa</option>
-                            </select>
-                        </div>
+                <!-- Inserimento Veicolo -->
+                <div id="vehicle-form" class="page">
+                    <div class="container">
+                        <button class="back-button" onclick="showPage('dashboard')">← Torna alla Dashboard</button>
                         
-                        <div class="form-group">
-                            <label for="data_intervento">Data Intervento *</label>
-                            <input type="date" id="data_intervento" name="data_intervento" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="tipo_intervento">Tipo Intervento *</label>
-                            <select id="tipo_intervento" name="tipo_intervento" required>
-                                <option value="">Seleziona tipo intervento</option>
-                                <option value="Tagliando">Tagliando</option>
-                                <option value="Cambio olio">Cambio olio</option>
-                                <option value="Revisione">Revisione</option>
-                                <option value="Riparazione">Riparazione</option>
-                                <option value="Sostituzione pneumatici">Sostituzione pneumatici</option>
-                                <option value="Controllo freni">Controllo freni</option>
-                                <option value="Altro">Altro</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="costo">Costo (€) *</label>
-                            <input type="number" id="costo" name="costo" step="0.01" placeholder="ES: 150.00" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="kilometraggio">Kilometraggio *</label>
-                            <input type="number" id="kilometraggio" name="kilometraggio" placeholder="ES: 50000" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="note">Note</label>
-                            <textarea id="note" name="note" placeholder="Note aggiuntive sull'intervento..."></textarea>
-                        </div>
-                        
-                        <button type="submit" class="submit-button">Salva</button>
-                    </form>
-                    
-                    <div class="interventions-list">
-                        <h3>Interventi Registrati</h3>
-                        <div id="interventionsList">
-                            <p>Nessun intervento registrato</p>
+                        <div class="form-card">
+                            <h2>Inserimento Veicolo</h2>
+                            <p class="form-subtitle">Dati Veicolo</p>
+                            
+                            <form id="vehicleForm">
+                                <div class="form-group">
+                                    <label for="targa">Targa *</label>
+                                    <input type="text" id="targa" name="targa" placeholder="ES: AB123CD" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="marca">Marca *</label>
+                                    <input type="text" id="marca" name="marca" placeholder="ES: Fiat" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="modello">Modello *</label>
+                                    <input type="text" id="modello" name="modello" placeholder="ES: Punto" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="anno">Anno Immatricolazione *</label>
+                                    <input type="number" id="anno" name="anno" placeholder="ES: 2020" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="scadenza_revisione">Scadenza Revisione</label>
+                                    <input type="date" id="scadenza_revisione" name="scadenza_revisione">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="scadenza_bollo">Scadenza Bollo</label>
+                                    <input type="date" id="scadenza_bollo" name="scadenza_bollo">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="scadenza_assicurazione">Scadenza Assicurazione</label>
+                                    <input type="date" id="scadenza_assicurazione" name="scadenza_assicurazione">
+                                </div>
+                                
+                                <button type="submit" class="submit-button">Salva</button>
+                            </form>
+                            
+                            <div class="vehicles-list">
+                                <h3>Veicoli Registrati</h3>
+                                <div id="vehiclesList">
+                                    <p>Nessun veicolo registrato</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Cerca Interventi -->
-        <div id="search-interventions" class="page">
-            <div class="container">
-                <button class="back-button" onclick="showPage('homepage')">← Torna alla Home</button>
-                
-                <div class="form-card">
-                    <h2>Cerca Interventi</h2>
-                    <p class="form-subtitle">Ricerca per targa</p>
-                    
-                    <div class="search-form">
-                        <div class="form-group">
-                            <label for="search_targa">Targa Veicolo</label>
-                            <select id="search_targa">
-                                <option value="">Seleziona una targa</option>
-                            </select>
+                <!-- Inserimento Intervento -->
+                <div id="intervention-form" class="page">
+                    <div class="container">
+                        <button class="back-button" onclick="showPage('dashboard')">← Torna alla Dashboard</button>
+                        
+                        <div class="form-card">
+                            <h2>Inserimento Intervento</h2>
+                            <p class="form-subtitle">Dati Intervento</p>
+                            
+                            <form id="interventionForm">
+                                <div class="form-group">
+                                    <label for="targa_veicolo">Targa Veicolo *</label>
+                                    <select id="targa_veicolo" name="targa_veicolo" required>
+                                        <option value="">Seleziona una targa</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="data_intervento">Data Intervento *</label>
+                                    <input type="date" id="data_intervento" name="data_intervento" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="tipo_intervento">Tipo Intervento *</label>
+                                    <select id="tipo_intervento" name="tipo_intervento" required>
+                                        <option value="">Seleziona tipo intervento</option>
+                                        <option value="Tagliando">Tagliando</option>
+                                        <option value="Cambio olio">Cambio olio</option>
+                                        <option value="Revisione">Revisione</option>
+                                        <option value="Riparazione">Riparazione</option>
+                                        <option value="Sostituzione pneumatici">Sostituzione pneumatici</option>
+                                        <option value="Controllo freni">Controllo freni</option>
+                                        <option value="Altro">Altro</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="costo">Costo (€) *</label>
+                                    <input type="number" id="costo" name="costo" step="0.01" placeholder="ES: 150.00" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="kilometraggio">Kilometraggio *</label>
+                                    <input type="number" id="kilometraggio" name="kilometraggio" placeholder="ES: 50000" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="note">Note</label>
+                                    <textarea id="note" name="note" placeholder="Note aggiuntive sull'intervento..."></textarea>
+                                </div>
+                                
+                                <button type="submit" class="submit-button">Salva</button>
+                            </form>
+                            
+                            <div class="interventions-list">
+                                <h3>Interventi Registrati</h3>
+                                <div id="interventionsList">
+                                    <p>Nessun intervento registrato</p>
+                                </div>
+                            </div>
                         </div>
-                        <button onclick="searchInterventions()" class="submit-button">Cerca</button>
-                    </div>
-                    
-                    <div id="searchResults" class="search-results">
-                        <!-- I risultati della ricerca verranno inseriti qui -->
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Visualizza Scadenze -->
-        <div id="view-scadenze" class="page">
-            <div class="container">
-                <button class="back-button" onclick="showPage('homepage')">← Torna alla Home</button>
-                
-                <div class="form-card">
-                    <h2>Scadenze Veicolo</h2>
-                    <p class="form-subtitle">Seleziona un veicolo</p>
-                    
-                    <div class="search-form">
-                        <div class="form-group">
-                            <label for="scadenze_veicolo">Veicolo</label>
-                            <select id="scadenze_veicolo">
-                                <option value="">Seleziona un veicolo</option>
-                            </select>
+                <!-- Cerca Interventi -->
+                <div id="search-interventions" class="page">
+                    <div class="container">
+                        <button class="back-button" onclick="showPage('dashboard')">← Torna alla Dashboard</button>
+                        
+                        <div class="form-card">
+                            <h2>Cerca Interventi</h2>
+                            <p class="form-subtitle">Ricerca per targa</p>
+                            
+                            <div class="search-form">
+                                <div class="form-group">
+                                    <label for="search_targa">Targa Veicolo</label>
+                                    <input type="text" id="search_targa" placeholder="ES: AB123CD">
+                                </div>
+                                <button onclick="searchInterventions()" class="submit-button">Cerca</button>
+                            </div>
+                            
+                            <div id="searchResults" class="search-results">
+                                <!-- I risultati della ricerca verranno inseriti qui -->
+                            </div>
                         </div>
-                        <button onclick="viewScadenze()" class="submit-button">Visualizza Scadenze</button>
                     </div>
-                    
-                    <div id="scadenzeResults" class="scadenze-results">
-                        <!-- Le scadenze verranno inserite qui -->
+                </div>
+
+                <!-- Visualizza Scadenze -->
+                <div id="view-scadenze" class="page">
+                    <div class="container">
+                        <button class="back-button" onclick="showPage('dashboard')">← Torna alla Dashboard</button>
+                        
+                        <div class="form-card">
+                            <h2>Scadenze Veicolo</h2>
+                            <p class="form-subtitle">Seleziona un veicolo</p>
+                            
+                            <div class="search-form">
+                                <div class="form-group">
+                                    <label for="scadenze_veicolo">Veicolo</label>
+                                    <select id="scadenze_veicolo">
+                                        <option value="">Seleziona un veicolo</option>
+                                    </select>
+                                </div>
+                                <button onclick="viewScadenze()" class="submit-button">Visualizza Scadenze</button>
+                            </div>
+                            
+                            <div id="scadenzeResults" class="scadenze-results">
+                                <!-- Le scadenze verranno inserite qui -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -634,6 +975,20 @@
     </div>
 
     <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfojuhufAOItJk3I2FoYTLcaRXiSzJQcc",
+            authDomain: "gestcar-3ffb1.firebaseapp.com",
+            projectId: "gestcar-3ffb1",
+            storageBucket: "gestcar-3ffb1.firebasestorage.app",
+            messagingSenderId: "359927238633",
+            appId: "1:359927238633:web:dc2936471d94de140d4578"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         // Dati locali per simulare il database
         let vehicles = [];
         let interventions = [];
@@ -662,10 +1017,22 @@
             const pages = document.querySelectorAll('.page');
             pages.forEach(page => page.classList.remove('active'));
             
+            // Rimuove la classe active da tutti i pulsanti del menu
+            const menuButtons = document.querySelectorAll('.menu-button');
+            menuButtons.forEach(button => button.classList.remove('active'));
+            
             // Mostra la pagina richiesta
             const targetPage = document.getElementById(pageId);
             if (targetPage) {
                 targetPage.classList.add('active');
+                
+                // Aggiunge la classe active al pulsante del menu corrispondente
+                const activeButton = Array.from(menuButtons).find(button => 
+                    button.getAttribute('onclick')?.includes(pageId)
+                );
+                if (activeButton) {
+                    activeButton.classList.add('active');
+                }
                 
                 // Aggiorna i dati quando si carica una pagina
                 if (pageId === 'vehicle-form') {
@@ -675,17 +1042,146 @@
                     updateVehicleSelects();
                     loadInterventionsList();
                 } else if (pageId === 'search-interventions') {
-                    updateVehicleSelects();
                     clearSearchResults();
                 } else if (pageId === 'view-scadenze') {
                     updateVehicleSelects();
                     clearScadenzeResults();
+                } else if (pageId === 'dashboard') {
+                    updateDashboard();
                 }
             }
         }
 
+        // Funzioni per la dashboard
+        function updateDashboard() {
+            updateDashboardStats();
+            updateRecentInterventions();
+            updateUpcomingDeadlines();
+        }
+
+        function updateDashboardStats() {
+            // Aggiorna il numero di veicoli
+            document.getElementById('totalVehicles').textContent = vehicles.length;
+            
+            // Aggiorna il numero di interventi
+            document.getElementById('totalInterventions').textContent = interventions.length;
+            
+            // Calcola e aggiorna le scadenze prossime
+            const today = new Date();
+            const oneMonthFromNow = new Date();
+            oneMonthFromNow.setMonth(today.getMonth() + 1);
+            
+            let upcomingCount = 0;
+            vehicles.forEach(vehicle => {
+                const scadenze = [
+                    vehicle.scadenza_revisione,
+                    vehicle.scadenza_bollo,
+                    vehicle.scadenza_assicurazione
+                ];
+                
+                scadenze.forEach(scadenza => {
+                    if (scadenza && new Date(scadenza) <= oneMonthFromNow && new Date(scadenza) >= today) {
+                        upcomingCount++;
+                    }
+                });
+            });
+            
+            document.getElementById('upcomingScadenze').textContent = upcomingCount;
+            
+            // Calcola e aggiorna il costo totale
+            const totalCost = interventions.reduce((sum, intervention) => sum + intervention.costo, 0);
+            document.getElementById('totalCost').textContent = formatCurrency(totalCost);
+        }
+
+        function updateRecentInterventions() {
+            const container = document.getElementById('recentInterventions');
+            
+            if (interventions.length === 0) {
+                container.innerHTML = '<p>Nessun intervento recente</p>';
+                return;
+            }
+            
+            // Ordina gli interventi per data (più recenti prima)
+            const recentInterventions = [...interventions]
+                .sort((a, b) => new Date(b.data_intervento) - new Date(a.data_intervento))
+                .slice(0, 5); // Mostra solo i 5 più recenti
+            
+            const html = recentInterventions.map(intervention => {
+                const vehicle = vehicles.find(v => v.targa === intervention.targa_veicolo);
+                const vehicleInfo = vehicle ? `${vehicle.marca} ${vehicle.modello}` : 'Veicolo non trovato';
+                
+                return `
+                    <div class="recent-item">
+                        <div class="recent-info">
+                            <h4>${intervention.tipo_intervento}</h4>
+                            <p>${vehicleInfo} - ${formatDate(intervention.data_intervento)}</p>
+                        </div>
+                        <div>${formatCurrency(intervention.costo)}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function updateUpcomingDeadlines() {
+            const container = document.getElementById('upcomingDeadlines');
+            const today = new Date();
+            const oneMonthFromNow = new Date();
+            oneMonthFromNow.setMonth(today.getMonth() + 1);
+            
+            let upcomingScadenze = [];
+            
+            vehicles.forEach(vehicle => {
+                const scadenze = [
+                    { tipo: 'Revisione', data: vehicle.scadenza_revisione },
+                    { tipo: 'Bollo', data: vehicle.scadenza_bollo },
+                    { tipo: 'Assicurazione', data: vehicle.scadenza_assicurazione }
+                ];
+                
+                scadenze.forEach(scadenza => {
+                    if (scadenza.data) {
+                        const scadenzaDate = new Date(scadenza.data);
+                        if (scadenzaDate <= oneMonthFromNow && scadenzaDate >= today) {
+                            upcomingScadenze.push({
+                                tipo: scadenza.tipo,
+                                data: scadenza.data,
+                                veicolo: `${vehicle.targa} - ${vehicle.marca} ${vehicle.modello}`,
+                                scaduta: scadenzaDate < today
+                            });
+                        }
+                    }
+                });
+            });
+            
+            if (upcomingScadenze.length === 0) {
+                container.innerHTML = '<p>Nessuna scadenza imminente</p>';
+                return;
+            }
+            
+            // Ordina per data (più prossime prima)
+            upcomingScadenze.sort((a, b) => new Date(a.data) - new Date(b.data));
+            
+            const html = upcomingScadenze.map(scadenza => {
+                const statusClass = scadenza.scaduta ? 'scaduta' : 'prossima';
+                const statusText = scadenza.scaduta ? 'Scaduta' : 'In scadenza';
+                
+                return `
+                    <div class="scadenza-item">
+                        <div class="scadenza-info">
+                            <h4>${scadenza.tipo}</h4>
+                            <p>${scadenza.veicolo} - ${formatDate(scadenza.data)}</p>
+                        </div>
+                        <div class="scadenza-status ${statusClass}">${statusText}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
         // Gestione form veicoli
-        document.getElementById('vehicleForm').addEventListener('submit', function(e) {
+        document.getElementById('vehicleForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const formData = new FormData(e.target);
@@ -707,17 +1203,25 @@
                 return;
             }
             
-            vehicles.push(vehicle);
-            saveToLocalStorage();
-            
-            showMessage('Veicolo salvato con successo!', 'success');
-            e.target.reset();
-            loadVehiclesList();
-            updateVehicleSelects();
+            try {
+                // Salva su Firebase
+                await db.collection('vehicles').doc(vehicle.id).set(vehicle);
+                
+                vehicles.push(vehicle);
+                
+                showMessage('Veicolo salvato con successo!', 'success');
+                e.target.reset();
+                loadVehiclesList();
+                updateVehicleSelects();
+                updateDashboard();
+            } catch (error) {
+                console.error('Errore nel salvataggio su Firebase:', error);
+                showMessage('Errore nel salvataggio del veicolo', 'error');
+            }
         });
 
         // Gestione form interventi
-        document.getElementById('interventionForm').addEventListener('submit', function(e) {
+        document.getElementById('interventionForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const formData = new FormData(e.target);
@@ -732,12 +1236,20 @@
                 created_at: new Date().toISOString()
             };
             
-            interventions.push(intervention);
-            saveToLocalStorage();
-            
-            showMessage('Intervento salvato con successo!', 'success');
-            e.target.reset();
-            loadInterventionsList();
+            try {
+                // Salva su Firebase
+                await db.collection('interventions').doc(intervention.id).set(intervention);
+                
+                interventions.push(intervention);
+                
+                showMessage('Intervento salvato con successo!', 'success');
+                e.target.reset();
+                loadInterventionsList();
+                updateDashboard();
+            } catch (error) {
+                console.error('Errore nel salvataggio su Firebase:', error);
+                showMessage('Errore nel salvataggio dell\'intervento', 'error');
+            }
         });
 
         // Caricamento lista veicoli
@@ -804,8 +1316,7 @@
         function updateVehicleSelects() {
             const selects = [
                 document.getElementById('targa_veicolo'),
-                document.getElementById('scadenze_veicolo'),
-                document.getElementById('search_targa')
+                document.getElementById('scadenze_veicolo')
             ];
             
             selects.forEach(select => {
@@ -829,11 +1340,11 @@
 
         // Ricerca interventi
         function searchInterventions() {
-            const targa = document.getElementById('search_targa').value;
+            const targa = document.getElementById('search_targa').value.toUpperCase();
             const container = document.getElementById('searchResults');
             
             if (!targa) {
-                container.innerHTML = '<p class="error">Seleziona una targa per la ricerca</p>';
+                container.innerHTML = '<p class="error">Inserisci una targa per la ricerca</p>';
                 return;
             }
             
@@ -957,7 +1468,7 @@
         }
 
         // Funzioni di modifica e cancellazione
-        function editVehicle(id) {
+        async function editVehicle(id) {
             const vehicle = vehicles.find(v => v.id === id);
             if (!vehicle) return;
             
@@ -971,30 +1482,35 @@
             document.getElementById('scadenza_assicurazione').value = vehicle.scadenza_assicurazione || '';
             
             // Rimuovi il veicolo dalla lista (sarà ri-aggiunto quando il form viene salvato)
-            deleteVehicle(id, false);
-            
-            // Mostra la pagina del form veicolo
-            showPage('vehicle-form');
+            await deleteVehicle(id, false);
             
             showMessage('Veicolo caricato per la modifica', 'success');
         }
 
-        function deleteVehicle(id, showConfirm = true) {
+        async function deleteVehicle(id, showConfirm = true) {
             if (showConfirm && !confirm('Sei sicuro di voler eliminare questo veicolo?')) {
                 return;
             }
             
-            vehicles = vehicles.filter(v => v.id !== id);
-            saveToLocalStorage();
-            loadVehiclesList();
-            updateVehicleSelects();
-            
-            if (showConfirm) {
-                showMessage('Veicolo eliminato', 'success');
+            try {
+                // Elimina da Firebase
+                await db.collection('vehicles').doc(id).delete();
+                
+                vehicles = vehicles.filter(v => v.id !== id);
+                loadVehiclesList();
+                updateVehicleSelects();
+                updateDashboard();
+                
+                if (showConfirm) {
+                    showMessage('Veicolo eliminato', 'success');
+                }
+            } catch (error) {
+                console.error('Errore nell\'eliminazione da Firebase:', error);
+                showMessage('Errore nell\'eliminazione del veicolo', 'error');
             }
         }
 
-        function editIntervention(id) {
+        async function editIntervention(id) {
             const intervention = interventions.find(i => i.id === id);
             if (!intervention) return;
             
@@ -1007,25 +1523,30 @@
             document.getElementById('note').value = intervention.note || '';
             
             // Rimuovi l'intervento dalla lista
-            deleteIntervention(id, false);
-            
-            // Mostra la pagina del form intervento
-            showPage('intervention-form');
+            await deleteIntervention(id, false);
             
             showMessage('Intervento caricato per la modifica', 'success');
         }
 
-        function deleteIntervention(id, showConfirm = true) {
+        async function deleteIntervention(id, showConfirm = true) {
             if (showConfirm && !confirm('Sei sicuro di voler eliminare questo intervento?')) {
                 return;
             }
             
-            interventions = interventions.filter(i => i.id !== id);
-            saveToLocalStorage();
-            loadInterventionsList();
-            
-            if (showConfirm) {
-                showMessage('Intervento eliminato', 'success');
+            try {
+                // Elimina da Firebase
+                await db.collection('interventions').doc(id).delete();
+                
+                interventions = interventions.filter(i => i.id !== id);
+                loadInterventionsList();
+                updateDashboard();
+                
+                if (showConfirm) {
+                    showMessage('Intervento eliminato', 'success');
+                }
+            } catch (error) {
+                console.error('Errore nell\'eliminazione da Firebase:', error);
+                showMessage('Errore nell\'eliminazione dell\'intervento', 'error');
             }
         }
 
@@ -1062,32 +1583,39 @@
             document.getElementById('scadenze_veicolo').value = '';
         }
 
-        // Gestione localStorage
-        function saveToLocalStorage() {
-            localStorage.setItem('vehicles', JSON.stringify(vehicles));
-            localStorage.setItem('interventions', JSON.stringify(interventions));
-        }
-
-        function loadFromLocalStorage() {
-            const savedVehicles = localStorage.getItem('vehicles');
-            const savedInterventions = localStorage.getItem('interventions');
-            
-            if (savedVehicles) {
-                vehicles = JSON.parse(savedVehicles);
-            }
-            
-            if (savedInterventions) {
-                interventions = JSON.parse(savedInterventions);
+        // Caricamento dati da Firebase
+        async function loadFromFirebase() {
+            try {
+                // Carica veicoli
+                const vehiclesSnapshot = await db.collection('vehicles').get();
+                vehicles = [];
+                vehiclesSnapshot.forEach(doc => {
+                    vehicles.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Carica interventi
+                const interventionsSnapshot = await db.collection('interventions').get();
+                interventions = [];
+                interventionsSnapshot.forEach(doc => {
+                    interventions.push({ id: doc.id, ...doc.data() });
+                });
+                
+                console.log('Dati caricati da Firebase con successo');
+            } catch (error) {
+                console.error('Errore nel caricamento da Firebase:', error);
+                showMessage('Errore nel caricamento dei dati', 'error');
             }
         }
 
         // Inizializzazione dell'applicazione
-        document.addEventListener('DOMContentLoaded', function() {
-            loadFromLocalStorage();
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Carica i dati da Firebase
+            await loadFromFirebase();
+            
             updateVehicleSelects();
             
-            // Mostra la homepage di default
-            showPage('homepage');
+            // Mostra la dashboard di default
+            showPage('dashboard');
             
             // Imposta la data di oggi come default per i form
             const today = new Date().toISOString().split('T')[0];
@@ -1097,12 +1625,15 @@
                     input.value = today;
                 }
             });
+            
+            // Aggiorna la dashboard
+            updateDashboard();
         });
 
-        // Gestione del tasto Esc per tornare alla homepage
+        // Gestione del tasto Esc per tornare alla dashboard
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                showPage('homepage');
+                showPage('dashboard');
             }
         });
 
@@ -1142,12 +1673,15 @@
                     if (data.vehicles && data.interventions) {
                         vehicles = data.vehicles;
                         interventions = data.interventions;
-                        saveToLocalStorage();
+                        
+                        // Salva i dati importati su Firebase
+                        saveImportedDataToFirebase(data.vehicles, data.interventions);
                         
                         // Aggiorna tutte le visualizzazioni
                         loadVehiclesList();
                         loadInterventionsList();
                         updateVehicleSelects();
+                        updateDashboard();
                         
                         showMessage('Dati importati con successo!', 'success');
                     } else {
@@ -1159,6 +1693,26 @@
             };
             
             reader.readAsText(file);
+        }
+
+        // Salva i dati importati su Firebase
+        async function saveImportedDataToFirebase(importedVehicles, importedInterventions) {
+            try {
+                // Salva i veicoli
+                for (const vehicle of importedVehicles) {
+                    await db.collection('vehicles').doc(vehicle.id).set(vehicle);
+                }
+                
+                // Salva gli interventi
+                for (const intervention of importedInterventions) {
+                    await db.collection('interventions').doc(intervention.id).set(intervention);
+                }
+                
+                console.log('Dati importati salvati su Firebase con successo');
+            } catch (error) {
+                console.error('Errore nel salvataggio dei dati importati su Firebase:', error);
+                showMessage('Errore nel salvataggio dei dati importati', 'error');
+            }
         }
     </script>
 </body>
